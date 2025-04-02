@@ -1,3 +1,5 @@
+package com.example.annyslamp.data.models
+
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

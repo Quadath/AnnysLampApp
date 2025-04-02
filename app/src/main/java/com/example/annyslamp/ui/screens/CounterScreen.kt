@@ -1,6 +1,6 @@
-package com.example.annyslamp.ui.theme
+package com.example.annyslamp.ui.screens
 
-import CounterViewModel
+import com.example.annyslamp.data.models.CounterViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
