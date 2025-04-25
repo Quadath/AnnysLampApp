@@ -15,7 +15,7 @@ class ESPWebSocketViewModel : ViewModel() {
     private var webSocket: WebSocket? = null
 
     fun connectToESP() {
-        val request = Request.Builder().url("ws://192.168.43.188:81").build() // IP-адреса ESP32
+        val request = Request.Builder().url("ws://192.168.4.1:81/ws").build()
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 viewModelScope.launch { _status.value = "Connected" }
