@@ -7,28 +7,51 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import android.util.Log
+import java.io.IOException
+import java.net.InetAddress
 
 class ESPScanner {
-    suspend fun findESP(): String? {
-        val subnet = "192.168.1." // або отримати динамічно з DHCP
+
+    suspend fun findESP(ips: List<String>): String? {
         return withContext(Dispatchers.IO) {
-            (2..254).map { ip ->
+            val results = ips.map { ip ->
                 async {
-                    val address = "$subnet$ip"
+                    println("Requesting ESP at $ip")
+                    val url = URL("http://$ip:81/device")
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.connectTimeout = 2000
+                    connection.readTimeout = 2000
+                    connection.requestMethod = "GET"
                     try {
-                        val url = URL("http://$address/device")
-                        val connection = url.openConnection() as HttpURLConnection
-                        connection.connectTimeout = 200
-                        connection.readTimeout = 200
-                        connection.requestMethod = "GET"
                         if (connection.responseCode == 200) {
                             val response = connection.inputStream.bufferedReader().readText()
-                            if (response.contains("\"type\":\"ESP\"")) return@async address
+                            println("Response from $ip: $response")
+
+                            try {
+                                val jsonResponse = JSONObject(response)
+                                val type = jsonResponse.optString("type")
+                                println("Type from JSON: $type")
+
+                                if (type == "ESP") {
+                                    println("ESP found at $ip")
+                                    return@async ip
+                                }
+                            } catch (e: Exception) {
+                                println("Error parsing JSON response: ${e.message}")
+                            }
+                        } else {
+                            println("Failed with response code from $ip: ${connection.responseCode}")
                         }
-                    } catch (_: Exception) {}
-                    null
+                    } catch (e: Exception) {
+                        println("Error checking $ip: ${e.message}")
+                    }
+                    null // Повертаємо null, якщо нічого не знайшли
                 }
-            }.awaitAll().firstOrNull { it != null }
+            }
+
+            val foundIps = results.awaitAll().filterNotNull()
+            foundIps.firstOrNull()
         }
     }
 

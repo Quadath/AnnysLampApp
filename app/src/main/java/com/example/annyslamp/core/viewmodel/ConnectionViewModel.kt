@@ -3,7 +3,9 @@ package com.example.annyslamp.core.viewmodel
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
+import com.example.annyslamp.NetworkScanner
 import com.example.annyslamp.core.event.ConnectionEvent
 import com.example.annyslamp.core.services.ESPScanner
 import com.example.annyslamp.core.services.WifiService
@@ -37,7 +39,7 @@ class ConnectionViewModel(
         val ssid = wifiService.getCurrentSSID()
         Log.d("ConnectionViewModel", "Current SSID: $ssid")
         if (ssid?.contains("Anny's Lamp", ignoreCase = true) == true) {
-            sendCredsToESP("YourHomeSSID", "YourPassword")
+            sendCredsToESP("Debug Point", "f0b60d42df10")
         } else {
             onEvent(ConnectionEvent.ScanLocalNetwork)
         }
@@ -45,11 +47,13 @@ class ConnectionViewModel(
 
     private fun scanNetwork() {
         viewModelScope.launch {
-            val espIp = espScanner.findESP()
-            if (espIp != null) {
-                _state.update { it.copy(espIp = espIp, connected = true) }
-            } else {
-                onEvent(ConnectionEvent.ConnectionFailed)
+            val reachableIps = NetworkScanner().scanNetwork()
+            reachableIps.forEach { ip ->
+                Log.d("NetworkScanner", "Found reachable IP: $ip")
+                val espIp = espScanner.findESP(reachableIps)
+                if (espIp != null) {
+                    _state.update { it.copy(espIp = espIp, connected = true) }
+                }
             }
         }
     }
