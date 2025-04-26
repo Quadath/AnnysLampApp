@@ -1,5 +1,7 @@
 package com.example.annyslamp
 
+import android.content.Context
+import android.net.wifi.WifiManager
 import android.util.Log
 import java.io.IOException
 import java.net.InetAddress
@@ -9,13 +11,11 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 
 class NetworkScanner {
-    suspend fun scanNetwork(): List<String> {
-        val subnet = "192.168.43." // Ваш підмережа
+    suspend fun scanNetwork(subnet: String): List<String> {
         val range = 1..254 // Діапазон IP
         val timeout = 1000 // Час тайм-ауту для пінгу
 
         return withContext(Dispatchers.IO) {
-            // Перевіряємо всі адреси від 192.168.1.1 до 192.168.1.254
             (range).map { ip ->
                 async {
                     val address = "$subnet$ip"
