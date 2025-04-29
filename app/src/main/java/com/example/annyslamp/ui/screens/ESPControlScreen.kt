@@ -29,7 +29,7 @@ fun ESPControlScreen(connectionViewModel: ConnectionViewModel) {
     val status = espWebSocketViewModel.status.collectAsState().value  // Оновлено
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 //        Text("Status: $status")
