@@ -30,7 +30,7 @@ class ESPWebSocketViewModel(
 
     fun connectToESP(ip: String) {
         //PORT CHANGED FOR PYTHON ESP EMULATOR
-        val request = Request.Builder().url("ws://$ip:8765/ws").build()
+        val request = Request.Builder().url("ws://$ip:81/ws").build()
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 viewModelScope.launch { _status.value = "Connected" }

@@ -20,6 +20,7 @@ import com.example.annyslamp.core.viewmodel.ConnectionViewModelFactory
 import android.Manifest
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -29,8 +30,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import com.example.annyslamp.components.Header
 import com.example.annyslamp.core.state.ConnectionPhase
+import com.example.annyslamp.core.state.ConnectionState
 import com.example.annyslamp.ui.screens.ESPControlScreen
+import com.example.annyslamp.ui.theme.AnnysLampTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -38,34 +42,37 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ),
-                1
-            )
-            Box(modifier = Modifier.fillMaxSize()
-                .padding(40.dp)
-                .background(MaterialTheme.colorScheme.primary)) {
-                val connectionViewModel: ConnectionViewModel = viewModel(
-                    factory = ConnectionViewModelFactory(LocalContext.current)
+            AnnysLampTheme {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ),
+                    1
                 )
-                LaunchedEffect(Unit) {
-                    connectionViewModel.onEvent(ConnectionEvent.CheckCurrentNetwork)
-                }
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    val connectionViewModel: ConnectionViewModel = viewModel(
+                        factory = ConnectionViewModelFactory(LocalContext.current)
+                    )
+                    val connectionState by connectionViewModel.state.collectAsState()
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
 
-                val connectionState by connectionViewModel.state.collectAsState()
+                        LaunchedEffect(Unit) {
+                            connectionViewModel.onEvent(ConnectionEvent.CheckCurrentNetwork)
+                        }
+                        Column {
+                            Header(connectionState.phase)
+                            if (connectionState.phase == ConnectionPhase.Connected) {
+                                ESPControlScreen(connectionViewModel)
+                            }
+                        }
 
-                when (val phase = connectionState.phase) {
-                    is ConnectionPhase.Idle -> Text("Idle")
-                    is ConnectionPhase.Scanning -> Row() { Text("Scanning"); CircularProgressIndicator() }
-                    is ConnectionPhase.Connecting -> Text("Connecting...")
-                    is ConnectionPhase.Connected -> {Box () {
-                        Text("Connected to ${connectionState.espIp}")
-                        ESPControlScreen(connectionViewModel)
-                    }}
-                    is ConnectionPhase.Failed -> Text("Error: ${phase.reason}")
+                    }
                 }
             }
         }
