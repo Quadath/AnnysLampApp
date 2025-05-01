@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import com.example.annyslamp.core.state.ConnectionState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.*
@@ -24,18 +23,26 @@ import com.example.annyslamp.R
 import com.example.annyslamp.ui.theme.extendedColors
 
 @Composable
-fun Header(connectionPhase : ConnectionPhase) {
+fun Header(connectionPhase : ConnectionPhase, ip: String? = null) {
     val statusText = when(connectionPhase) {
         ConnectionPhase.Connected -> "Connected"
         ConnectionPhase.Scanning -> "Scanning..."
-        ConnectionPhase.Failed("Connection failed") -> "Connection failed"
-//        connectionState.ssid == null -> "Not in Home Network"
+        ConnectionPhase.Connecting -> "Connecting..."
+        is ConnectionPhase.Failed -> "Connection failed"
         else -> "Error..."
+    }
+
+    val descriptionText = when(connectionPhase) {
+        ConnectionPhase.Connected -> "at $ip"
+        ConnectionPhase.Scanning -> "Takes time..."
+        ConnectionPhase.Connecting -> "to $ip"
+        is ConnectionPhase.Failed -> connectionPhase.reason
+        else -> ""
     }
 
     val statusColor = when(connectionPhase) {
         ConnectionPhase.Connected -> Color.Green
-        ConnectionPhase.Scanning -> Color.Blue
+        ConnectionPhase.Scanning -> Color.White
         else -> MaterialTheme.colorScheme.secondary
     }
 
@@ -63,23 +70,34 @@ fun Header(connectionPhase : ConnectionPhase) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .height(40.dp),
+                .height(50.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 painter = painterResource(id = R.drawable.heart_512),
                 contentDescription = "Lamp image",
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(50.dp)
                     .graphicsLayer(alpha = targetHeartAlpha),
                 contentScale = ContentScale.Crop
             )
-            Text(
-                text = statusText,
-                modifier = Modifier.padding(start = 10.dp),
-                style = MaterialTheme.typography.titleLarge,
-                color = statusColor
-            )
+            Column(
+                modifier = Modifier,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = statusText,
+                    modifier = Modifier.padding(start = 10.dp),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = statusColor,
+                )
+                Text(
+                    text = descriptionText,
+                    modifier = Modifier.padding(start = 10.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray
+                )
+            }
         }
     }
 
@@ -88,5 +106,5 @@ fun Header(connectionPhase : ConnectionPhase) {
 @Preview(showBackground = true)
 @Composable
 fun HeaderPreview() {
-    Header(connectionPhase = ConnectionPhase.Connected)
+    Header(connectionPhase = ConnectionPhase.Connected, "192.168.41.114")
 }

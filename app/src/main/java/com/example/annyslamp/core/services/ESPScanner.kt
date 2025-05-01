@@ -7,12 +7,10 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import android.util.Log
-import java.io.IOException
-import java.net.InetAddress
 
 class ESPScanner {
 
+    //Deprecated
     suspend fun findESP(ips: List<String>): String? {
         return withContext(Dispatchers.IO) {
             val results = ips.map { ip ->
@@ -52,6 +50,44 @@ class ESPScanner {
 
             val foundIps = results.awaitAll().filterNotNull()
             foundIps.firstOrNull()
+        }
+    }
+
+    suspend fun connectEsp(ip: String): String? {
+        return withContext(Dispatchers.IO) {
+            println("Requesting ESP at $ip")
+            val url = URL("http://$ip:81/device")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.connectTimeout = 2000
+            connection.readTimeout = 2000
+            connection.requestMethod = "GET"
+
+            try {
+                if (connection.responseCode == 200) {
+                    val response = connection.inputStream.bufferedReader().readText()
+                    println("Response from $ip: $response")
+
+                    try {
+                        val jsonResponse = JSONObject(response)
+                        val type = jsonResponse.optString("type")
+                        println("Type from JSON: $type")
+
+                        if (type == "ESP") {
+                            println("ESP found at $ip")
+                            return@withContext ip // Повертаємо IP, якщо знайдений ESP
+                        }
+                    } catch (e: Exception) {
+                        println("Error parsing JSON response: ${e.message}")
+                        return@withContext null // Повертаємо null при помилці парсингу JSON
+                    }
+                } else {
+                    println("Failed with response code from $ip: ${connection.responseCode}")
+                }
+            } catch (e: Exception) {
+                println("Error checking $ip: ${e.message}")
+            }
+
+            return@withContext null // Повертаємо null, якщо нічого не знайдено або сталася помилка
         }
     }
 
