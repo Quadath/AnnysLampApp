@@ -1,6 +1,7 @@
 package com.example.annyslamp.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -15,7 +16,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,7 +24,7 @@ import androidx.compose.ui.zIndex
 import com.example.annyslamp.R
 
 @Composable
-fun Heart() {
+fun Heart(isOn:Boolean = false, onClick: () -> Unit) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
     Box(
@@ -36,9 +36,12 @@ fun Heart() {
         Image(
             painter = painterResource(id = R.drawable.heart_512),
             contentDescription = "Lamp image",
-            modifier = Modifier.size(screenWidth * 0.8f).
-                    align(Alignment.Center),
-            contentScale = ContentScale.Crop
+            modifier = Modifier.size(screenWidth * 0.8f)
+                .align(Alignment.Center)
+                .clickable {
+                    onClick()
+                },
+            contentScale = ContentScale.Crop,
         )
 
         Box(
@@ -63,14 +66,16 @@ fun Heart() {
                     contentAlignment = Alignment.Center
                 ) {
                     var color = Color((index * 0.5f).toInt(), ((index * 0.1f).toInt()) , ((444 - index) * 0.5f).toInt())
+                    color = Color.Red
+                    var alpha = if (isOn) 0.4f else 0f
                 Image(
                     painter = painterResource(id = R.drawable._12x512_textures__82__photoroom),
                     contentDescription = "Lamp image",
                     modifier = Modifier.size((cellSize * 0.8f * 10).dp)
                         .fillMaxSize()
-                        .graphicsLayer(alpha = 0.4f, scaleX = 3.0f, scaleY = 3.0f) // Задаємо прозорість 30%
+                        .graphicsLayer(alpha = alpha, scaleX = 3.0f, scaleY = 3.0f)
                         .then(Modifier.graphicsLayer(alpha = 0.3f)),
-                    colorFilter = ColorFilter.tint(color), // Накладаємо червоний колір
+                    colorFilter = ColorFilter.tint(color),
                 )
             }}}
         }
@@ -81,7 +86,7 @@ fun Heart() {
 @Preview
 @Composable
 fun HeartPreview() {
-    Heart()
+    Heart {}
 }
 
 

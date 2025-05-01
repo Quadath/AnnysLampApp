@@ -24,10 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.annyslamp.components.Header
 import com.example.annyslamp.components.Heart
+import com.example.annyslamp.core.event.LampEvent
 import com.example.annyslamp.core.state.ConnectionPhase
 import com.example.annyslamp.core.viewmodel.LampViewModel
 import com.example.annyslamp.core.viewmodel.LampViewModelFactory
-import com.example.annyslamp.ui.screens.ESPControlScreen
 import com.example.annyslamp.ui.theme.AnnysLampTheme
 
 class MainActivity : ComponentActivity() {
@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
                         factory = LampViewModelFactory(connectionFlow = connectionViewModel.phase, espIpConnectionFlow = connectionViewModel.espIp, onConnectionLost = { Log.d("ConnectionViewModel", "Connection lost") } )
                     )
                     val connectionState by connectionViewModel.state.collectAsState()
+                    val lampState by lampViewModel.state.collectAsState()
                     Box(
                         modifier = Modifier.fillMaxSize()
                     ) {
@@ -67,8 +68,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Header(connectionState.phase, connectionState.espIp)
                             if (connectionState.phase == ConnectionPhase.Connected) {
-                                ESPControlScreen(connectionViewModel)
-                                Heart()
+                                Heart(isOn = lampState.isOn ,onClick = { lampViewModel.onEvent(LampEvent.Toggle)})
                             }
                         }
 
