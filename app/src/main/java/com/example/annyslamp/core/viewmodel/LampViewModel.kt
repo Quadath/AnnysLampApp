@@ -1,6 +1,7 @@
 package com.example.annyslamp.core.viewmodel
 
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.annyslamp.core.event.LampEvent
@@ -46,14 +47,17 @@ class LampViewModel(
         Log.d("LampViewModel", "Event: $event")
         when(event) {
             is LampEvent.Toggle -> toggleLight()
-            /*is LampEvent.SetBrightness -> setBrightness(event.value)
+            //is LampEvent.SetBrightness -> setBrightness(event.value)
             is LampEvent.SetColor -> setColor(event.color)
-            is LampEvent.SetMode -> TODO()*/
+            //is LampEvent.SetMode -> TODO()
             else -> {}
         }
     }
     private fun toggleLight() {
         sendCommand("toggle", if (state.value.isOn) false.toString() else true.toString())
+    }
+    private fun setColor(color: Color) {
+        sendCommand("color", colorToJson(color).toString())
     }
 
     private fun connectToESP(ip: String) {
@@ -93,5 +97,17 @@ class LampViewModel(
         val command = mapOf("command" to command, "value" to value)
         val json = JSONObject(command).toString()
         webSocket?.send(json)
+    }
+
+    private fun colorToJson(color: Color): JSONObject {
+        val r = (color.red * 255).toInt()
+        val g = (color.green * 255).toInt()
+        val b = (color.blue * 255).toInt()
+
+        return JSONObject().apply {
+            put("r", r)
+            put("g", g)
+            put("b", b)
+        }
     }
 }

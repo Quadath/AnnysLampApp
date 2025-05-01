@@ -1,6 +1,6 @@
 package com.example.annyslamp.core.event
 
-import android.graphics.Color
+import androidx.compose.ui.graphics.Color
 
 sealed class LampEvent {
     object Toggle : LampEvent()

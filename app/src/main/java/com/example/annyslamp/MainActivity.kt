@@ -18,10 +18,21 @@ import android.Manifest
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.example.annyslamp.components.Header
 import com.example.annyslamp.components.Heart
 import com.example.annyslamp.core.event.LampEvent
@@ -29,6 +40,10 @@ import com.example.annyslamp.core.state.ConnectionPhase
 import com.example.annyslamp.core.viewmodel.LampViewModel
 import com.example.annyslamp.core.viewmodel.LampViewModelFactory
 import com.example.annyslamp.ui.theme.AnnysLampTheme
+import com.github.skydoves.colorpicker.compose.AlphaTile
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,6 +84,10 @@ class MainActivity : ComponentActivity() {
                             Header(connectionState.phase, connectionState.espIp)
                             if (connectionState.phase == ConnectionPhase.Connected) {
                                 Heart(isOn = lampState.isOn ,onClick = { lampViewModel.onEvent(LampEvent.Toggle)})
+                                ColorPickerDemo {
+                                    Log.d("ColorPickerDemo", "Color selected: $it")
+                                    lampViewModel.onEvent(LampEvent.SetColor(Color(it.red, it.green, it.blue)))
+                                }
                             }
                         }
 
@@ -76,5 +95,43 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ColorPickerDemo(onColorSelected: (Color) -> Unit) {
+    val controller = rememberColorPickerController()
+    val currentColor = remember { mutableStateOf<Color?>(null) }
+
+    LaunchedEffect(currentColor.value) {
+        currentColor.value?.let { color ->
+            delay(100) // 100ms debounce
+            onColorSelected(color)
+        }
+    }
+
+
+    Column(
+        modifier = Modifier.padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        HsvColorPicker(
+            modifier = Modifier
+                .size(300.dp)
+                .padding(8.dp),
+            controller = controller,
+            onColorChanged = { envelope ->
+                currentColor.value = envelope.color
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        AlphaTile(
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape),
+            controller = controller
+        )
     }
 }
