@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.wifi.WifiManager
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import com.example.annyslamp.NetworkScanner
 import com.example.annyslamp.core.event.ConnectionEvent
@@ -35,6 +34,7 @@ class ConnectionViewModel(
             is ConnectionEvent.ScanLocalNetwork -> scanNetwork()
             is ConnectionEvent.SaveCredentials -> sendCredentialsToESP(event.ssid, event.password)
             is ConnectionEvent.ConnectionFailed -> showError()
+            is ConnectionEvent.ConnectionLost -> showError()
         }
     }
 
@@ -52,13 +52,18 @@ class ConnectionViewModel(
         _state.update { it.copy(phase = ConnectionPhase.Scanning, subnet = getSubnetPrefix(context)) }
         viewModelScope.launch {
             val reachableIps = NetworkScanner().scanNetwork(state.value.subnet!!)
+            var found = false;
             reachableIps.forEach { ip ->
                 Log.d("NetworkScanner", "Found reachable IP: $ip")
                 val espIp = espScanner.findESP(reachableIps)
                 if (espIp != null) {
                     _state.update { it.copy(espIp = espIp, phase = ConnectionPhase.Connected) }
                     Log.d("ESP", "IP: $espIp")
+                    found = true
                 }
+            }
+            if (!found) {
+                onEvent(ConnectionEvent.ConnectionFailed)
             }
         }
     }
@@ -76,6 +81,7 @@ class ConnectionViewModel(
         }
     }
     private fun showError() {
+        Log.d("ConnectionViewModel", "Connection failed")
         _state.update { it.copy(phase = ConnectionPhase.Failed("Connection failed")) }
     }
     fun getSubnetPrefix(context: Context): String {

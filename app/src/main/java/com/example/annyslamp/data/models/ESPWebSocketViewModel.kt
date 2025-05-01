@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.annyslamp.core.state.ConnectionPhase
 import com.example.annyslamp.core.viewmodel.ConnectionViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -24,13 +25,17 @@ class ESPWebSocketViewModel(
                 if (state.phase is ConnectionPhase.Connected) {
                     connectToESP(state.espIp!!)
                 }
+                while (state.phase is ConnectionPhase.Connected) {
+                    sendPing()
+                    delay(1000)
+                }
             }
         }
     }
 
     fun connectToESP(ip: String) {
         //PORT CHANGED FOR PYTHON ESP EMULATOR
-        val request = Request.Builder().url("ws://$ip:81/8765").build()
+        val request = Request.Builder().url("ws://$ip:81/ws").build()
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 viewModelScope.launch { _status.value = "Connected" }
@@ -48,6 +53,10 @@ class ESPWebSocketViewModel(
 
     fun sendCommand(command: String) {
         webSocket?.send(command)
+    }
+
+    fun sendPing() {
+        webSocket?.send("""{ "ping": true }""")
     }
 
     override fun onCleared() {

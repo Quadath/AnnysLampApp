@@ -1,6 +1,7 @@
 package com.example.annyslamp.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.annyslamp.core.state.ConnectionPhase
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.example.annyslamp.R
@@ -26,6 +28,7 @@ fun Header(connectionPhase : ConnectionPhase) {
     val statusText = when(connectionPhase) {
         ConnectionPhase.Connected -> "Connected"
         ConnectionPhase.Scanning -> "Scanning..."
+        ConnectionPhase.Failed("Connection failed") -> "Connection failed"
 //        connectionState.ssid == null -> "Not in Home Network"
         else -> "Error..."
     }
@@ -33,7 +36,7 @@ fun Header(connectionPhase : ConnectionPhase) {
     val statusColor = when(connectionPhase) {
         ConnectionPhase.Connected -> Color.Green
         ConnectionPhase.Scanning -> Color.Blue
-        else -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.secondary
     }
 
     val targetColor by animateColorAsState(
@@ -43,6 +46,15 @@ fun Header(connectionPhase : ConnectionPhase) {
             else -> MaterialTheme.colorScheme.error
         },
         animationSpec = tween(durationMillis = 400)
+    )
+
+    val targetHeartAlpha by animateFloatAsState(
+        targetValue = when (connectionPhase) {
+            ConnectionPhase.Connected -> 1f
+            ConnectionPhase.Scanning -> 0.7f
+            else -> 0.5f
+        },
+        animationSpec = tween(durationMillis = 1000)
     )
 
     Box(modifier = Modifier.fillMaxWidth()
@@ -58,7 +70,8 @@ fun Header(connectionPhase : ConnectionPhase) {
             Image(
                 painter = painterResource(id = R.drawable.heart_512),
                 contentDescription = "Lamp image",
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(40.dp)
+                    .graphicsLayer(alpha = targetHeartAlpha),
                 contentScale = ContentScale.Crop
             )
             Text(

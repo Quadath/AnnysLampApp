@@ -5,4 +5,5 @@ sealed class ConnectionEvent {
     data object ScanLocalNetwork : ConnectionEvent()
     data class SaveCredentials(val ssid: String, val password: String) : ConnectionEvent()
     data object ConnectionFailed : ConnectionEvent()
+    data object ConnectionLost : ConnectionEvent()
 }
