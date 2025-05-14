@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.annyslamp.components.Header
 import com.example.annyslamp.components.Heart
+import com.example.annyslamp.components.WifiCredentialsForm
 import com.example.annyslamp.core.event.LampEvent
 import com.example.annyslamp.core.state.ConnectionPhase
 import com.example.annyslamp.core.viewmodel.LampViewModel
@@ -88,6 +89,11 @@ class MainActivity : ComponentActivity() {
                                     Log.d("ColorPickerDemo", "Color selected: $it")
                                     lampViewModel.onEvent(LampEvent.SetColor(Color(it.red, it.green, it.blue)))
                                 }
+                            }
+                            if (connectionState.phase == ConnectionPhase.OnAccessPoint("Waiting on credentials")) {
+                                WifiCredentialsForm(onSubmit = { ssid, password ->
+                                    connectionViewModel.sendCredentialsToESP(ssid, password)
+                                })
                             }
                         }
 

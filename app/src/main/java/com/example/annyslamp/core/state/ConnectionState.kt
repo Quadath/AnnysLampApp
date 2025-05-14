@@ -4,6 +4,8 @@ data class ConnectionState(
     val ssid: String? = null,
     val subnet: String? = null,
     val espIp: String? = null,
+    val homeSsid: String? = null,
+    val homePassword: String? = null,
     val phase: ConnectionPhase = ConnectionPhase.Idle
 )
 
@@ -12,5 +14,6 @@ sealed class ConnectionPhase {
     object Connecting : ConnectionPhase()
     object Scanning : ConnectionPhase()
     object Connected : ConnectionPhase()
+    data class OnAccessPoint(val status: String) : ConnectionPhase()
     data class Failed(val reason: String) : ConnectionPhase()
 }

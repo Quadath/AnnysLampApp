@@ -1,5 +1,6 @@
 package com.example.annyslamp.components
 
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -24,31 +25,50 @@ import com.example.annyslamp.ui.theme.extendedColors
 
 @Composable
 fun Header(connectionPhase : ConnectionPhase, ip: String? = null) {
+    Log.d("Header", "Connection phase: $connectionPhase")
     val statusText = when(connectionPhase) {
         ConnectionPhase.Connected -> "Connected"
         ConnectionPhase.Scanning -> "Scanning..."
         ConnectionPhase.Connecting -> "Connecting..."
-        is ConnectionPhase.Failed -> "Connection failed"
-        else -> "Error..."
+        is ConnectionPhase.OnAccessPoint -> {
+            "On Access Point"
+        }
+        is ConnectionPhase.Failed -> {
+            "Error"
+        }
+        else -> ""
     }
 
     val descriptionText = when(connectionPhase) {
         ConnectionPhase.Connected -> "at $ip"
         ConnectionPhase.Scanning -> "Takes time..."
         ConnectionPhase.Connecting -> "to $ip"
-        is ConnectionPhase.Failed -> connectionPhase.reason
+        is ConnectionPhase.OnAccessPoint -> {
+            val status = connectionPhase.status
+            status
+        }
+        is ConnectionPhase.Failed -> {
+            val reason = connectionPhase.reason
+            "Failed: $reason"
+        }
         else -> ""
     }
 
     val statusColor = when(connectionPhase) {
         ConnectionPhase.Connected -> Color.Green
         ConnectionPhase.Scanning -> Color.White
-        else -> MaterialTheme.colorScheme.secondary
+        is ConnectionPhase.OnAccessPoint -> {
+            Color.Yellow
+        }
+        else -> MaterialTheme.colorScheme.primary
     }
 
     val targetColor by animateColorAsState(
         targetValue = when (connectionPhase) {
             ConnectionPhase.Connected -> MaterialTheme.colorScheme.primary
+            is ConnectionPhase.OnAccessPoint -> {
+                Color.DarkGray
+            }
             ConnectionPhase.Scanning -> MaterialTheme.extendedColors.connecting
             else -> MaterialTheme.colorScheme.error
         },

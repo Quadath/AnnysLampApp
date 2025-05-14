@@ -26,9 +26,6 @@ class LampViewModel(
     private val _state = MutableStateFlow(LampState())
     val state: StateFlow<LampState> = _state.asStateFlow()
 
-    private val _status = MutableStateFlow("Disconnected")
-    val status = _status.asStateFlow()
-
     private val client = OkHttpClient()
     private var webSocket: WebSocket? = null
 
