@@ -90,7 +90,8 @@ class MainActivity : ComponentActivity() {
                                     lampViewModel.onEvent(LampEvent.SetColor(Color(it.red, it.green, it.blue)))
                                 }
                             }
-                            if (connectionState.phase == ConnectionPhase.OnAccessPoint("Waiting on credentials")) {
+                            val phase = connectionState.phase;
+                            if (connectionState.phase == ConnectionPhase.OnAccessPoint("Waiting on credentials") || phase.toString().contains("Failed to connect`")) {
                                 WifiCredentialsForm(onSubmit = { ssid, password ->
                                     connectionViewModel.sendCredentialsToESP(ssid, password)
                                 })

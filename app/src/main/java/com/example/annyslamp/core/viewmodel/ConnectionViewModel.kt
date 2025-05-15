@@ -174,6 +174,7 @@ class ConnectionViewModel(
             put("command", "credentials")
             put("data", data)
         }
+        _state.update { it.copy(phase = ConnectionPhase.OnAccessPoint("Connecting to $ssid")) }
 
         webSocket?.send(root.toString())
     }
@@ -200,9 +201,6 @@ class ConnectionViewModel(
                         }
                     }
                 }
-
-
-
                 delay(1000)
             }
         }
