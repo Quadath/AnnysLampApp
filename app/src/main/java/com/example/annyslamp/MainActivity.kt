@@ -40,6 +40,7 @@ import com.example.annyslamp.core.event.LampEvent
 import com.example.annyslamp.core.state.ConnectionPhase
 import com.example.annyslamp.core.viewmodel.LampViewModel
 import com.example.annyslamp.core.viewmodel.LampViewModelFactory
+import com.example.annyslamp.data.local.DataStoreManager
 import com.example.annyslamp.ui.theme.AnnysLampTheme
 import com.github.skydoves.colorpicker.compose.AlphaTile
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
@@ -63,8 +64,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
                 ) {
+                    val context = LocalContext.current
+                    val dataStoreManager = remember { DataStoreManager(context) }
+
                     val connectionViewModel: ConnectionViewModel = viewModel(
-                        factory = ConnectionViewModelFactory(LocalContext.current)
+                        factory = ConnectionViewModelFactory(LocalContext.current, dataStoreManager)
                     )
                     val lampViewModel: LampViewModel = viewModel(
                         factory = LampViewModelFactory(connectionFlow = connectionViewModel.phase, espIpConnectionFlow = connectionViewModel.espIp, onConnectionLost = { Log.d("ConnectionViewModel", "Connection lost") } )
@@ -91,7 +95,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             val phase = connectionState.phase;
-                            if (connectionState.phase == ConnectionPhase.OnAccessPoint("Waiting on credentials") || phase.toString().contains("Failed to connect`")) {
+                            if (connectionState.phase == ConnectionPhase.OnAccessPoint("Waiting on credentials") || phase.toString().contains("Failed to connect`") || phase.toString().contains("Problems`")){
                                 WifiCredentialsForm(onSubmit = { ssid, password ->
                                     connectionViewModel.sendCredentialsToESP(ssid, password)
                                 })

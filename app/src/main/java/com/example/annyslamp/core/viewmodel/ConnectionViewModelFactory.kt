@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.annyslamp.core.services.ESPScanner
 import com.example.annyslamp.core.services.WifiService
+import com.example.annyslamp.data.local.DataStoreManager
 
 class ConnectionViewModelFactory(
-    private val context: Context
+    private val context: Context,
+    private val dataStoreManager: DataStoreManager
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -15,7 +17,8 @@ class ConnectionViewModelFactory(
         return ConnectionViewModel(
             context = context.applicationContext,
             wifiService = WifiService(context.applicationContext),
-            espScanner = ESPScanner()
+            espScanner = ESPScanner(),
+            dataStoreManager = dataStoreManager
         ) as T
     }
 }

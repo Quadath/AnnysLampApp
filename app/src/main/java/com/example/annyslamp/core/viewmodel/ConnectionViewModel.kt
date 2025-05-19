@@ -11,6 +11,7 @@ import com.example.annyslamp.core.services.ESPScanner
 import com.example.annyslamp.core.services.WifiService
 import com.example.annyslamp.core.state.ConnectionPhase
 import com.example.annyslamp.core.state.ConnectionState
+import com.example.annyslamp.data.local.DataStoreManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,7 +32,8 @@ import java.net.InetAddress
 class ConnectionViewModel(
     private val context: Context,
     private val wifiService: WifiService,
-    private val espScanner: ESPScanner
+    private val espScanner: ESPScanner,
+    private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ConnectionState())
@@ -47,8 +49,33 @@ class ConnectionViewModel(
         .map { it.espIp }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+
+    fun saveEspIp(ip: String) {
+        viewModelScope.launch {
+            dataStoreManager.saveEspIp(ip)
+        }
+    }
+
+    fun saveHomeSsid(ssid: String) {
+        viewModelScope.launch {
+            dataStoreManager.saveHomeSsid(ssid)
+        }
+    }
+
     init {
         startNetworkMonitoring()
+        viewModelScope.launch {
+            dataStoreManager.homeSsid.collect { ssid ->
+                Log.d("SSID", "Home SSID: $ssid")
+                _state.update { it.copy(homeSsid = ssid) }
+            }
+        }
+        viewModelScope.launch {
+            dataStoreManager.espIp.collect { ip ->
+                Log.d("ESP IP", "ESP IP: $ip")
+                _state.update { it.copy(espIp = ip) }
+            }
+        }
     }
 
     fun onEvent(event: ConnectionEvent) {
@@ -74,6 +101,12 @@ class ConnectionViewModel(
         } else if (ssid?.contains("<unknown ssid>", ignoreCase = true) == true) {
             onEvent(ConnectionEvent.ConnectionFailed("Out of network"))
             Log.d("ConnectionViewModel", "No network found")
+        } else if (ssid == state.value.homeSsid) {
+            val espIp = state.value.espIp
+            if (espIp != null) {
+                webSocketToESP(espIp)
+            }
+            onEvent(ConnectionEvent.ScanLocalNetwork)
         } else {
             onEvent(ConnectionEvent.ScanLocalNetwork)
         }
@@ -88,6 +121,7 @@ class ConnectionViewModel(
                 Log.d("NetworkScanner", "Found reachable IP: $ip")
                 val espIp = espScanner.connectEsp(ip)
                 if (espIp != null) {
+                    saveEspIp(espIp)
                     _state.update { it.copy(espIp = espIp, phase = ConnectionPhase.Connected) }
                     Log.d("ESP", "IP: $espIp")
                     found = true
@@ -124,7 +158,12 @@ class ConnectionViewModel(
         val request = Request.Builder().url("ws://$ip:81/ws").build()
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                _state.update { it.copy(phase = ConnectionPhase.OnAccessPoint("Connected to lamp")) }
+                val currentSsid = wifiService.getCurrentSSID()
+                if (currentSsid == "Anny's Lamp") {
+                    _state.update { it.copy(phase = ConnectionPhase.OnAccessPoint("Connected to lamp")) }
+                } else {
+                    _state.update { it.copy(phase = ConnectionPhase.Connected) }
+                }
                 Log.d("WebSocket", "WebSocket opened successfully")
             }
 
@@ -147,6 +186,16 @@ class ConnectionViewModel(
                 json.has("message") -> {
                     val message = json.getString("message")
                     _state.update { it.copy(phase = ConnectionPhase.OnAccessPoint(message)) }
+                    if (message.contains("Connected")) {
+                        val ssid = message.substring(13, message.length - 30)
+                        viewModelScope.launch {
+                            dataStoreManager.saveHomeSsid(ssid);
+                        }
+                        Log.d("ConnectionViewModel", "New homeSsid: $ssid")
+
+                        webSocket?.close(1000, "Switching network")
+                        webSocket = null
+                    }
                 }
                 else -> {
 
@@ -193,11 +242,11 @@ class ConnectionViewModel(
                             _state.update { it.copy(phase = ConnectionPhase.OnAccessPoint("Connecting to the lamp")) }
                             webSocketToESP("192.168.4.1")
                         }
-                        "penis" -> {
-                            _state.update { it.copy(phase = ConnectionPhase.Connected) }
+                        state.value.homeSsid -> {
+
                         }
                         else -> {
-                            onEvent(ConnectionEvent.ConnectionFailed("Wrong network"))
+                            onEvent(ConnectionEvent.ConnectionFailed("Out of home network"))
                         }
                     }
                 }
