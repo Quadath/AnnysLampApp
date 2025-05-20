@@ -5,5 +5,6 @@ import androidx.compose.ui.graphics.Color
 data class LampState(
     val isOn: Boolean = false,
     val brightness: Int = 255,
+    val color: Color = Color.White,
     val pixels: List<Color> = List(444) { Color.Black }
 )

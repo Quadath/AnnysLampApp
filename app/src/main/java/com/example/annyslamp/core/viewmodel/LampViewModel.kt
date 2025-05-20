@@ -11,6 +11,7 @@ import com.example.annyslamp.core.state.LampState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -44,14 +45,17 @@ class LampViewModel(
         Log.d("LampViewModel", "Event: $event")
         when(event) {
             is LampEvent.Toggle -> toggleLight()
-            //is LampEvent.SetBrightness -> setBrightness(event.value)
+            is LampEvent.SetBrightness -> setBrightness(event.value.toInt())
             is LampEvent.SetColor -> setColor(event.color)
             //is LampEvent.SetMode -> TODO()
             else -> {}
         }
     }
-    private fun toggleLight() {
+    fun toggleLight() {
         sendCommand("toggle", if (state.value.isOn) false.toString() else true.toString())
+    }
+    private fun setBrightness(value: Int) {
+        sendCommand("brightness", value.toString())
     }
     private fun setColor(color: Color) {
         sendCommand("color", colorToJson(color).toString())
@@ -75,10 +79,28 @@ class LampViewModel(
 
                 json.has("brightness") -> {
                     val brightness = json.getInt("brightness")
+                    _state.value = _state.value.copy(brightness = brightness)
                 }
 
                 json.has("mode") -> {
                     val mode = json.getString("mode")
+                }
+
+                json.has("color") -> {
+                    try {
+                        val json = JSONObject(message)
+                        val colorJson = json.getJSONObject("color")
+
+                        val r = colorJson.getInt("r")
+                        val g = colorJson.getInt("g")
+                        val b = colorJson.getInt("b")
+
+
+                        _state.update { it.copy(color = Color(r, g, b)) }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
                 }
 
                 else -> {

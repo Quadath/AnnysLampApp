@@ -1,5 +1,6 @@
 package com.example.annyslamp
 
+import BrightnessSlider
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -88,7 +89,8 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Header(connectionState.phase, connectionState.espIp)
                             if (connectionState.phase == ConnectionPhase.Connected) {
-                                Heart(isOn = lampState.isOn ,onClick = { lampViewModel.onEvent(LampEvent.Toggle)})
+                                Heart(lampViewModel)
+
                                 ColorPickerDemo {
                                     Log.d("ColorPickerDemo", "Color selected: $it")
                                     lampViewModel.onEvent(LampEvent.SetColor(Color(it.red, it.green, it.blue)))
@@ -101,7 +103,18 @@ class MainActivity : ComponentActivity() {
                                 })
                             }
                         }
-
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                        ) {
+                            if (connectionState.phase == ConnectionPhase.Connected) {
+                                BrightnessSlider(
+                                    value = lampState.brightness.toFloat(),
+                                    onValueChange = { lampViewModel.onEvent(LampEvent.SetBrightness(it)) },
+                                    modifier = Modifier.align(Alignment.CenterEnd),
+                                )
+                            }
+                        }
                     }
                 }
             }

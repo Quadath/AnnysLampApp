@@ -263,6 +263,7 @@ class ConnectionViewModel(
         delay(1000)
         onEvent(ConnectionEvent.CheckCurrentNetwork)
     }
+
     fun getSubnetPrefix(context: Context): String {
         val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         val ipInt = wifiManager.connectionInfo.ipAddress
