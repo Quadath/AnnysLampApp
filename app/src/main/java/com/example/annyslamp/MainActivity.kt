@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
                         factory = ConnectionViewModelFactory(LocalContext.current, dataStoreManager)
                     )
                     val lampViewModel: LampViewModel = viewModel(
-                        factory = LampViewModelFactory(connectionFlow = connectionViewModel.phase, espIpConnectionFlow = connectionViewModel.espIp, onConnectionLost = { Log.d("ConnectionViewModel", "Connection lost") } )
+                        factory = LampViewModelFactory(connectionFlow = connectionViewModel.phase, espIpConnectionFlow = connectionViewModel.espIp, onConnectionLost = { Log.d("ConnectionViewModel", "Connection lost"); connectionViewModel.onEvent(ConnectionEvent.ConnectionLost) } )
                     )
                     val connectionState by connectionViewModel.state.collectAsState()
                     val lampState by lampViewModel.state.collectAsState()

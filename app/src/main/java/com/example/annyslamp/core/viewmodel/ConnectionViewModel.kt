@@ -88,7 +88,7 @@ class ConnectionViewModel(
                     onError(event.message)
                 }
             }
-            is ConnectionEvent.ConnectionLost -> connectByIp(state.value.espIp)
+            is ConnectionEvent.ConnectionLost -> {connectByIp(state.value.espIp)}
         }
     }
 
@@ -105,10 +105,11 @@ class ConnectionViewModel(
             val espIp = state.value.espIp
             if (espIp != null) {
                 webSocketToESP(espIp)
+            } else {
+                onEvent(ConnectionEvent.ScanLocalNetwork)
             }
-            onEvent(ConnectionEvent.ScanLocalNetwork)
         } else {
-            onEvent(ConnectionEvent.ScanLocalNetwork)
+            onEvent(ConnectionEvent.ConnectionFailed("Out of home network"))
         }
     }
 

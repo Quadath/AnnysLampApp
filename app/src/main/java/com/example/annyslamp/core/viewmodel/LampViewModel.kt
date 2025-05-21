@@ -4,10 +4,12 @@ import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.annyslamp.core.event.ConnectionEvent
 import com.example.annyslamp.core.event.LampEvent
 import com.example.annyslamp.core.services.LampWebSocketListener
 import com.example.annyslamp.core.state.ConnectionPhase
 import com.example.annyslamp.core.state.LampState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +17,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import org.json.JSONObject
 
 
@@ -29,6 +33,8 @@ class LampViewModel(
 
     private val client = OkHttpClient()
     private var webSocket: WebSocket? = null
+    var lastMessageTime: Long = 0
+    var isConnected: Boolean = false
 
     init {
         viewModelScope.launch {
@@ -37,6 +43,16 @@ class LampViewModel(
                     connectToESP(espIpConnectionFlow.value!!)
                     Log.d("LampViewModel", "Connected to ESP at IP: ${espIpConnectionFlow.value}")
                 }
+            }
+        }
+        viewModelScope.launch {
+            while (true) {
+                if (System.currentTimeMillis() - lastMessageTime > 3000 && webSocket != null) {
+                    webSocket?.close(1000, "Lost connection")
+                    webSocket = null
+                    onConnectionLost()
+                }
+                delay(1000)
             }
         }
     }
@@ -63,11 +79,29 @@ class LampViewModel(
 
     private fun connectToESP(ip: String) {
         val request = Request.Builder().url("ws://$ip:81/ws").build()
-        webSocket = client.newWebSocket(request, LampWebSocketListener { message -> onMessageReceived(message) })
+        webSocket = client.newWebSocket(request, object : WebSocketListener() {
+            override fun onOpen(webSocket: WebSocket, response: Response) {
+                isConnected = true
+                Log.d("WebSocket", "WebSocket opened successfully")
+            }
+
+            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                isConnected = false
+                super.onClosed(webSocket, code, reason)
+            }
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                isConnected = false
+                Log.e("WebSocket", "WebSocket connection error!", t)
+            }
+            override fun onMessage(webSocket: WebSocket, text: String) {
+                onMessageReceived(text)
+            }
+        })
     }
 
     private fun onMessageReceived(message: String) {
         Log.d("LampViewModel", "Message received: $message")
+        lastMessageTime = System.currentTimeMillis()
         try {
             val json = JSONObject(message)
 
@@ -113,6 +147,10 @@ class LampViewModel(
     }
 
     private fun sendCommand(command: String, value: String) {
+        if (!isConnected) {
+            connectToESP(espIpConnectionFlow.value!!)
+        }
+        Log.d("LampViewModel", "Sending command: $command, value: $value")
         val command = mapOf("command" to command, "value" to value)
         val json = JSONObject(command).toString()
         webSocket?.send(json)

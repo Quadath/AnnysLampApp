@@ -25,7 +25,6 @@ import com.example.annyslamp.ui.theme.extendedColors
 
 @Composable
 fun Header(connectionPhase : ConnectionPhase, ip: String? = null) {
-    Log.d("Header", "Connection phase: $connectionPhase")
     val statusText = when(connectionPhase) {
         ConnectionPhase.Connected -> "Connected"
         ConnectionPhase.Scanning -> "Scanning..."
