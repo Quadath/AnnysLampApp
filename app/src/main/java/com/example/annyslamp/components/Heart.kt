@@ -27,6 +27,7 @@ import com.example.annyslamp.R
 import com.example.annyslamp.core.viewmodel.LampViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.example.annyslamp.core.event.LampEvent
 
 @Composable
 fun Heart(lampViewModel: LampViewModel) {
@@ -47,7 +48,7 @@ fun Heart(lampViewModel: LampViewModel) {
             modifier = Modifier.size(screenWidth * 0.8f)
                 .align(Alignment.Center)
                 .clickable {
-                    lampViewModel.toggleLight()
+                    lampViewModel.onEvent(LampEvent.Toggle)
                 },
             contentScale = ContentScale.Crop,
         )

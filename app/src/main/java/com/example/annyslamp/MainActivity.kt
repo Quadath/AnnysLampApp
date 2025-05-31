@@ -25,7 +25,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.annyslamp.components.Header
 import com.example.annyslamp.components.Heart
+import com.example.annyslamp.components.SwipeBox
 import com.example.annyslamp.components.WifiCredentialsForm
 import com.example.annyslamp.core.event.LampEvent
 import com.example.annyslamp.core.state.ConnectionPhase
@@ -61,58 +64,95 @@ class MainActivity : ComponentActivity() {
                     ),
                     1
                 )
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    val context = LocalContext.current
-                    val dataStoreManager = remember { DataStoreManager(context) }
 
-                    val connectionViewModel: ConnectionViewModel = viewModel(
-                        factory = ConnectionViewModelFactory(LocalContext.current, dataStoreManager)
+
+                val context = LocalContext.current
+                val dataStoreManager = remember { DataStoreManager(context) }
+
+                val connectionViewModel: ConnectionViewModel = viewModel(
+                    factory = ConnectionViewModelFactory(
+                        LocalContext.current,
+                        dataStoreManager
                     )
-                    val lampViewModel: LampViewModel = viewModel(
-                        factory = LampViewModelFactory(connectionFlow = connectionViewModel.phase, espIpConnectionFlow = connectionViewModel.espIp, onConnectionLost = { Log.d("ConnectionViewModel", "Connection lost"); connectionViewModel.onEvent(ConnectionEvent.ConnectionLost) } )
-                    )
-                    val connectionState by connectionViewModel.state.collectAsState()
-                    val lampState by lampViewModel.state.collectAsState()
+                )
+                val lampViewModel: LampViewModel = viewModel(
+                    factory = LampViewModelFactory(
+                        connectionFlow = connectionViewModel.phase,
+                        espIpConnectionFlow = connectionViewModel.espIp,
+                        onConnectionLost = {
+                            Log.d(
+                                "ConnectionViewModel",
+                                "Connection lost"
+                            ); connectionViewModel.onEvent(ConnectionEvent.ConnectionLost)
+                        })
+                )
+                val connectionState by connectionViewModel.state.collectAsState()
+                val lampState by lampViewModel.state.collectAsState()
+
+
+
+                SwipeBox(
+                    onSwipeLeft = { lampViewModel.onEvent(LampEvent.SetMode) },
+                    onSwipeRight = { lampViewModel.onEvent(LampEvent.SetMode) }) {
                     Box(
                         modifier = Modifier.fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
                     ) {
-
-                        LaunchedEffect(Unit) {
-                            connectionViewModel.onEvent(ConnectionEvent.CheckCurrentNetwork)
-                        }
-                        Column (
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Box(
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            Header(connectionState.phase, connectionState.espIp)
-                            if (connectionState.phase == ConnectionPhase.Connected) {
-                                Heart(lampViewModel)
 
-                                ColorPickerDemo {
-                                    Log.d("ColorPickerDemo", "Color selected: $it")
-                                    lampViewModel.onEvent(LampEvent.SetColor(Color(it.red, it.green, it.blue)))
+                            LaunchedEffect(Unit) {
+                                connectionViewModel.onEvent(ConnectionEvent.CheckCurrentNetwork)
+                            }
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Header(connectionState.phase, connectionState.espIp)
+                                if (connectionState.phase == ConnectionPhase.Connected) {
+                                    Heart(lampViewModel)
+
+                                    ColorPickerDemo {
+                                        Log.d("ColorPickerDemo", "Color selected: $it")
+                                        lampViewModel.onEvent(
+                                            LampEvent.SetColor(
+                                                Color(
+                                                    it.red,
+                                                    it.green,
+                                                    it.blue
+                                                )
+                                            )
+                                        )
+                                    }
+                                }
+                                val phase = connectionState.phase;
+                                if (connectionState.phase == ConnectionPhase.OnAccessPoint("Waiting on credentials") || phase.toString()
+                                        .contains("Failed to connect`") || phase.toString()
+                                        .contains("Problems`")
+                                ) {
+                                    WifiCredentialsForm(onSubmit = { ssid, password ->
+                                        connectionViewModel.sendCredentialsToESP(ssid, password)
+                                    })
                                 }
                             }
-                            val phase = connectionState.phase;
-                            if (connectionState.phase == ConnectionPhase.OnAccessPoint("Waiting on credentials") || phase.toString().contains("Failed to connect`") || phase.toString().contains("Problems`")){
-                                WifiCredentialsForm(onSubmit = { ssid, password ->
-                                    connectionViewModel.sendCredentialsToESP(ssid, password)
-                                })
-                            }
-                        }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                        ) {
-                            if (connectionState.phase == ConnectionPhase.Connected) {
-                                BrightnessSlider(
-                                    value = lampState.brightness.toFloat(),
-                                    onValueChange = { lampViewModel.onEvent(LampEvent.SetBrightness(it)) },
-                                    modifier = Modifier.align(Alignment.CenterEnd),
-                                )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                            ) {
+                                if (connectionState.phase == ConnectionPhase.Connected) {
+                                    BrightnessSlider(
+                                        value = lampState.brightness.toFloat(),
+                                        onValueChange = {
+                                            lampViewModel.onEvent(
+                                                LampEvent.SetBrightness(
+                                                    it
+                                                )
+                                            )
+                                        },
+                                        modifier = Modifier.align(Alignment.CenterEnd),
+                                    )
+                                }
                             }
                         }
                     }

@@ -34,6 +34,10 @@ class LampViewModel(
     private val client = OkHttpClient()
     private var webSocket: WebSocket? = null
     var lastMessageTime: Long = 0
+
+    private var lastSetModeTrigger: Long = 0L
+    private val setModeDebounceInterval = 300L
+
     var isConnected: Boolean = false
 
     init {
@@ -63,11 +67,10 @@ class LampViewModel(
             is LampEvent.Toggle -> toggleLight()
             is LampEvent.SetBrightness -> setBrightness(event.value.toInt())
             is LampEvent.SetColor -> setColor(event.color)
-            //is LampEvent.SetMode -> TODO()
-            else -> {}
+            is LampEvent.SetMode -> setMode()
         }
     }
-    fun toggleLight() {
+    private fun toggleLight() {
         sendCommand("toggle", if (state.value.isOn) false.toString() else true.toString())
     }
     private fun setBrightness(value: Int) {
@@ -75,6 +78,13 @@ class LampViewModel(
     }
     private fun setColor(color: Color) {
         sendCommand("color", colorToJson(color).toString())
+    }
+    private fun setMode() {
+        val now = System.currentTimeMillis()
+        if (now - lastSetModeTrigger > setModeDebounceInterval) {
+            lastSetModeTrigger = now
+            sendCommand("mode", "mode")
+        }
     }
 
     private fun connectToESP(ip: String) {

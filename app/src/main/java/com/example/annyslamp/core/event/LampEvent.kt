@@ -6,7 +6,7 @@ sealed class LampEvent {
     object Toggle : LampEvent()
     data class SetBrightness(val value: Float) : LampEvent()
     data class SetColor(val color: Color) : LampEvent()
-    data class SetMode(val mode: LampMode) : LampEvent()
+    object SetMode : LampEvent()
 }
 
 enum class LampMode {
